@@ -1,23 +1,11 @@
-import cors from "cors";
 import dotenv from "dotenv";
-import express from "express";
 import { getDb } from "./db";
-import courseRouter from "./routes/courseRoutes";
-import materialRouter from "./routes/materialRoutes";
+import { createApp } from "./app";
 
 dotenv.config();
 
-const app = express();
+const app = createApp();
 const port = Number(process.env.PORT ?? 3000);
-
-app.use(cors());
-app.use(express.json());
-
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok" });
-});
-app.use("/courses", courseRouter);
-app.use("/materials", materialRouter);
 
 async function startServer() {
   const db = getDb();

@@ -9,6 +9,8 @@ const emptyForm = {
 
 function MaterialFormModal({ isOpen, mode = 'add', material = null, onClose, onSubmit }) {
   const [form, setForm] = useState(emptyForm)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     if (mode === 'edit' && material) {
@@ -27,21 +29,29 @@ function MaterialFormModal({ isOpen, mode = 'add', material = null, onClose, onS
   if (!isOpen) return null
   if (mode === 'edit' && !material) return null
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
+    setIsSubmitting(true)
+    setError('')
 
-    const payload = {
-      ...form,
-      link: form.link.trim(),
+    try {
+      const payload = {
+        ...form,
+        link: form.link.trim(),
+      }
+
+      if (mode === 'edit' && material) {
+        await onSubmit?.({ id: material.id, ...payload })
+      } else {
+        await onSubmit?.(payload)
+      }
+
+      onClose?.()
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : 'Failed to save material')
+    } finally {
+      setIsSubmitting(false)
     }
-
-    if (mode === 'edit' && material) {
-      onSubmit?.({ id: material.id, ...payload })
-    } else {
-      onSubmit?.(payload)
-    }
-
-    onClose?.()
   }
 
   const titleText = mode === 'edit' ? 'Edit Material' : 'Add Material'
@@ -84,16 +94,23 @@ function MaterialFormModal({ isOpen, mode = 'add', material = null, onClose, onS
             onChange={(e) => setForm((prev) => ({ ...prev, link: e.target.value }))}
           />
 
+          {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+
           <div className="mt-4 flex justify-end gap-2">
             <button
               type="button"
               className="rounded-lg border border-slate-300 px-4 py-2 text-sm"
               onClick={onClose}
+              disabled={isSubmitting}
             >
               Cancel
             </button>
-            <button type="submit" className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white">
-              {submitText}
+            <button
+              type="submit"
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:bg-blue-400"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Saving...' : submitText}
             </button>
           </div>
         </form>

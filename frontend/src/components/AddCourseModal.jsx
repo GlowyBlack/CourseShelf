@@ -10,14 +10,25 @@ const initialForm = {
 
 function AddCourseModal({ isOpen, onClose, onSubmit }) {
   const [form, setForm] = useState(initialForm)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState('')
 
   if (!isOpen) return null
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
-    onSubmit?.(form)
-    setForm(initialForm)
-    onClose?.()
+    setIsSubmitting(true)
+    setError('')
+
+    try {
+      await onSubmit?.(form)
+      setForm(initialForm)
+      onClose?.()
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : 'Failed to add course')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -67,16 +78,23 @@ function AddCourseModal({ isOpen, onClose, onSubmit }) {
             />
           </div>
 
+          {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+
           <div className="mt-4 flex justify-end gap-2">
             <button
               type="button"
               className="rounded-lg border border-slate-300 px-4 py-2 text-sm"
               onClick={onClose}
+              disabled={isSubmitting}
             >
               Cancel
             </button>
-            <button type="submit" className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white">
-              Save
+            <button
+              type="submit"
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:bg-blue-400"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Saving...' : 'Save'}
             </button>
           </div>
         </form>

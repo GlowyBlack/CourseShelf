@@ -1,5 +1,10 @@
 import type { Request, Response } from "express";
-import { createCourse } from "../repositories/courseRepository";
+import {
+  createCourse,
+  getCourseById,
+  getCourses,
+} from "../repositories/courseRepository";
+import { validateAndBuildTerm } from "../utils/termValidation";
 
 type CreateCourseRequestBody = {
   name: string;
@@ -27,38 +32,63 @@ export async function createCourseController(
     return res.status(400).json({ error: "Department is required" });
   }
 
-  if (!Number.isInteger(year)) {
-    return res.status(400).json({ error: "Year must be a whole number (e.g., 2026)" });
+  const termValidation = validateAndBuildTerm({
+    year,
+    termSeason: termSeason ?? "",
+    semester,
+  });
+  if (!termValidation.valid) {
+    return res.status(400).json({ error: termValidation.error });
   }
 
-  if(year<1900) {
-    return res.status(400).json({ error: "Year must be greater than or equal to 1900" });
-  }
-
-  if(termSeason != 'S' && termSeason != 'W'){
-    return res.status(400).json({ error: "Term must be Summer or Winter" });
-  }
-
-  if (!Number.isInteger(semester)) {
-    return res.status(400).json({ error: "Semester must be a whole number (1 or 2)" });
-  }
-  
-  if(semester<1 || semester>2) {
-    return res.status(400).json({ error: "Semester must be a whole number (1 or 2)" });
-  }
-
-  const term = year.toString() + termSeason + semester;
   try {
     const course = await createCourse({
       name,
       department,
-      term,
+      term: termValidation.term,
     });
 
     return res.status(201).json(course);
   } catch (error) {
     return res.status(500).json({
       message: "Failed to create course",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+}
+
+export async function getCoursesController(_req: Request, res: Response) {
+  try {
+    const courses = await getCourses();
+    return res.status(200).json(courses);
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to fetch courses",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+}
+
+export async function getCourseByIdController(
+  req: Request<{ courseId: string }>,
+  res: Response
+) {
+  const courseId = Number(req.params.courseId);
+
+  if (!Number.isInteger(courseId) || courseId <= 0) {
+    return res.status(400).json({ error: "courseId must be a positive integer" });
+  }
+
+  try {
+    const course = await getCourseById(courseId);
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
+    }
+
+    return res.status(200).json(course);
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to fetch course",
       error: error instanceof Error ? error.message : "Unknown error",
     });
   }

@@ -23,3 +23,24 @@ export async function courseExistsById(courseId: number): Promise<boolean> {
 
   return course !== null;
 }
+
+export async function getCourses() {
+  const db = getDb();
+
+  return db.course.findMany({
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+export async function getCourseById(courseId: number) {
+  const db = getDb();
+
+  return db.course.findUnique({
+    where: { id: courseId },
+    include: {
+      materials: {
+        orderBy: { createdAt: "desc" },
+      },
+    },
+  });
+}

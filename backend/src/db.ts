@@ -23,3 +23,12 @@ export function getDb(): PrismaClient {
 
   return global.prisma;
 }
+
+export async function resetDbClientForTests() {
+  if (!global.prisma) {
+    return;
+  }
+
+  await global.prisma.$disconnect();
+  global.prisma = undefined;
+}

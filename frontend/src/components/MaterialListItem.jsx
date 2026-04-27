@@ -2,6 +2,9 @@ import { useState } from 'react'
 
 function MaterialListItem({ material, onEdit, onDelete }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const rawLink = material.link?.trim() ?? ''
+  const normalizedLink =
+    rawLink && /^https?:\/\//i.test(rawLink) ? rawLink : rawLink ? `https://${rawLink}` : ''
 
   const handleEditClick = () => {
     setIsMenuOpen(false)
@@ -48,11 +51,11 @@ function MaterialListItem({ material, onEdit, onDelete }) {
       </div>
       <div className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">{material.type}</div>
       <div className="text-sm text-slate-700">{material.description}</div>
-      {material.link ? (
+      {normalizedLink ? (
         <a
-          href={material.link}
+          href={normalizedLink}
           target="_blank"
-          rel="noreferrer"
+          rel="noopener noreferrer"
           className="mt-2 inline-block text-sm font-medium text-blue-600 hover:text-blue-700"
         >
           Open link
