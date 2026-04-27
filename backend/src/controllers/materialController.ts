@@ -34,7 +34,7 @@ export async function createMaterialController(
   res: Response
 ) {
   const title = req.body.title?.trim();
-  const type = req.body.type;
+  const type = req.body.type?.trim();
   const description = req.body.description?.trim();
   const rawLink = req.body.link?.trim();
   const courseId = Number(req.params.courseId);
@@ -47,8 +47,7 @@ export async function createMaterialController(
     });
   }
 
-  const normalizedType = type.trim();
-  if (!allowedTypes.has(normalizedType)) {
+  if (!allowedTypes.has(type)) {
     return res.status(400).json({
       error: "Type must be one of: Lecture Notes, Assignment, Syllabus, Other",
     });
@@ -56,7 +55,9 @@ export async function createMaterialController(
 
   if (!description) return res.status(400).json({ error: "Description is required" });
 
-  const link = rawLink && rawLink.length > 0 ? rawLink : undefined;
+  if (!rawLink) return res.status(400).json({ error: "Link is required" });
+
+  const link = rawLink;
 
   if (typeof courseId !== "number" || !Number.isInteger(courseId) || courseId <= 0) {
     return res.status(400).json({ error: "courseId must be a positive integer" });
@@ -70,7 +71,7 @@ export async function createMaterialController(
 
     const material = await createMaterial({
       title,
-      type: normalizedType,
+      type,
       description,
       link,
       courseId,
